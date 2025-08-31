@@ -1,6 +1,7 @@
 #include "rc_tank.h"
 #include "dfplayer.h"
 #include "driver/mcpwm_prelude.h"
+#include "driver/ledc.h"
 #include "driver/gpio.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
@@ -12,16 +13,14 @@ static const char* TAG = "RC_TANK";
 // 전역 변수
 rc_tank_control_t rc_tank = {0};
 
-// MCPWM 핸들 정의
+// MCPWM 핸들 정의 (모터 제어용)
 static mcpwm_timer_handle_t left_track_timer = NULL;
 static mcpwm_timer_handle_t right_track_timer = NULL;
 static mcpwm_timer_handle_t turret_timer = NULL;
-static mcpwm_timer_handle_t servo_timer = NULL;
 
 static mcpwm_oper_handle_t left_track_oper = NULL;
 static mcpwm_oper_handle_t right_track_oper = NULL;
 static mcpwm_oper_handle_t turret_oper = NULL;
-static mcpwm_oper_handle_t servo_oper = NULL;
 
 static mcpwm_cmpr_handle_t left_track_cmpr_a = NULL;
 static mcpwm_cmpr_handle_t left_track_cmpr_b = NULL;
@@ -29,8 +28,6 @@ static mcpwm_cmpr_handle_t right_track_cmpr_a = NULL;
 static mcpwm_cmpr_handle_t right_track_cmpr_b = NULL;
 static mcpwm_cmpr_handle_t turret_cmpr_a = NULL;
 static mcpwm_cmpr_handle_t turret_cmpr_b = NULL;
-static mcpwm_cmpr_handle_t servo_cmpr_a = NULL;
-static mcpwm_cmpr_handle_t servo_cmpr_b = NULL;
 
 static mcpwm_gen_handle_t left_track_gen_a = NULL;
 static mcpwm_gen_handle_t left_track_gen_b = NULL;
@@ -38,8 +35,6 @@ static mcpwm_gen_handle_t right_track_gen_a = NULL;
 static mcpwm_gen_handle_t right_track_gen_b = NULL;
 static mcpwm_gen_handle_t turret_gen_a = NULL;
 static mcpwm_gen_handle_t turret_gen_b = NULL;
-static mcpwm_gen_handle_t servo_gen_a = NULL;
-static mcpwm_gen_handle_t servo_gen_b = NULL;
 
 // GPIO 설정
 static void setup_gpio(void) {
@@ -58,6 +53,41 @@ static void setup_gpio(void) {
     gpio_set_level(HEADLIGHT_LED_PIN, 0);
 }
 
+// LEDC 초기화 (서보 모터용)
+static void setup_ledc(void) {
+    // LEDC 타이머 설정
+    ledc_timer_config_t ledc_timer = {
+        .duty_resolution = LEDC_DUTY_RES,
+        .freq_hz = LEDC_FREQUENCY,
+        .speed_mode = LEDC_MODE,
+        .timer_num = LEDC_TIMER,
+        .clk_cfg = LEDC_AUTO_CLK,
+    };
+    ledc_timer_config(&ledc_timer);
+    
+    // 포 마운트 서보 모터 채널 설정
+    ledc_channel_config_t mount_channel = {
+        .channel = LEDC_CHANNEL_MOUNT,
+        .duty = 0,
+        .gpio_num = MOUNT_SERVO_PIN,
+        .speed_mode = LEDC_MODE,
+        .hpoint = 0,
+        .timer_sel = LEDC_TIMER
+    };
+    ledc_channel_config(&mount_channel);
+    
+    // 포신 서보 모터 채널 설정
+    ledc_channel_config_t cannon_channel = {
+        .channel = LEDC_CHANNEL_CANNON,
+        .duty = 0,
+        .gpio_num = CANNON_SERVO_PIN,
+        .speed_mode = LEDC_MODE,
+        .hpoint = 0,
+        .timer_sel = LEDC_TIMER
+    };
+    ledc_channel_config(&cannon_channel);
+}
+
 void rc_tank_init(void) {
     ESP_LOGI(TAG, "RC Tank initialization started");
     
@@ -72,7 +102,10 @@ void rc_tank_init(void) {
     // GPIO 설정
     setup_gpio();
     
-    // MCPWM 초기화
+    // LEDC 초기화 (서보 모터용)
+    setup_ledc();
+    
+    // MCPWM 초기화 (모터 제어용)
     mcpwm_timer_config_t timer_config = {
         .group_id = 0,
         .clk_src = MCPWM_TIMER_CLK_SRC_DEFAULT,
@@ -125,30 +158,14 @@ void rc_tank_init(void) {
     gen_config.gen_gpio_num = TURRET_IN2_PIN;
     ESP_ERROR_CHECK(mcpwm_new_generator(turret_oper, &gen_config, &turret_gen_b));
     
-    // 서보 모터용 MCPWM 설정 (50Hz)
-    timer_config.period_ticks = MCPWM_TIMER_RESOLUTION / 50;
-    ESP_ERROR_CHECK(mcpwm_new_timer(&timer_config, &servo_timer));
-    ESP_ERROR_CHECK(mcpwm_new_operator(&(mcpwm_operator_config_t){}, &servo_oper));
-    ESP_ERROR_CHECK(mcpwm_operator_connect_timer(servo_oper, servo_timer));
-    
-    ESP_ERROR_CHECK(mcpwm_new_comparator(servo_oper, &cmpr_config, &servo_cmpr_a));
-    ESP_ERROR_CHECK(mcpwm_new_comparator(servo_oper, &cmpr_config, &servo_cmpr_b));
-    
-    gen_config.gen_gpio_num = CANNON_SERVO_PIN;
-    ESP_ERROR_CHECK(mcpwm_new_generator(servo_oper, &gen_config, &servo_gen_a));
-    gen_config.gen_gpio_num = MOUNT_SERVO_PIN;
-    ESP_ERROR_CHECK(mcpwm_new_generator(servo_oper, &gen_config, &servo_gen_b));
-    
     // 타이머 시작
     ESP_ERROR_CHECK(mcpwm_timer_enable(left_track_timer));
     ESP_ERROR_CHECK(mcpwm_timer_enable(right_track_timer));
     ESP_ERROR_CHECK(mcpwm_timer_enable(turret_timer));
-    ESP_ERROR_CHECK(mcpwm_timer_enable(servo_timer));
     
     ESP_ERROR_CHECK(mcpwm_timer_start_stop(left_track_timer, MCPWM_TIMER_START_NO_STOP));
     ESP_ERROR_CHECK(mcpwm_timer_start_stop(right_track_timer, MCPWM_TIMER_START_NO_STOP));
     ESP_ERROR_CHECK(mcpwm_timer_start_stop(turret_timer, MCPWM_TIMER_START_NO_STOP));
-    ESP_ERROR_CHECK(mcpwm_timer_start_stop(servo_timer, MCPWM_TIMER_START_NO_STOP));
     
     // 초기 상태 설정
     rc_tank.state = RC_TANK_STOP;
@@ -181,15 +198,20 @@ void rc_tank_set_track_speed(int left_speed, int right_speed) {
     rc_tank.left_track_speed = left_speed;
     rc_tank.right_track_speed = right_speed;
     
+    // MCPWM period_ticks 계산 (10MHz / 5kHz = 2000)
+    const uint32_t period_ticks = MCPWM_TIMER_RESOLUTION / MCPWM_FREQ;
+    
     // 왼쪽 트랙 제어
     if (left_speed > 0) {
-        // 전진
-        mcpwm_comparator_set_compare_value(left_track_cmpr_a, left_speed * 100);
+        // 전진 - duty cycle을 period_ticks 범위 내로 조정
+        uint32_t compare_value = (uint32_t)((left_speed * period_ticks) / 255);
+        mcpwm_comparator_set_compare_value(left_track_cmpr_a, compare_value);
         mcpwm_comparator_set_compare_value(left_track_cmpr_b, 0);
     } else if (left_speed < 0) {
         // 후진
+        uint32_t compare_value = (uint32_t)((-left_speed * period_ticks) / 255);
         mcpwm_comparator_set_compare_value(left_track_cmpr_a, 0);
-        mcpwm_comparator_set_compare_value(left_track_cmpr_b, -left_speed * 100);
+        mcpwm_comparator_set_compare_value(left_track_cmpr_b, compare_value);
     } else {
         // 정지
         mcpwm_comparator_set_compare_value(left_track_cmpr_a, 0);
@@ -199,12 +221,14 @@ void rc_tank_set_track_speed(int left_speed, int right_speed) {
     // 오른쪽 트랙 제어
     if (right_speed > 0) {
         // 전진
-        mcpwm_comparator_set_compare_value(right_track_cmpr_a, right_speed * 100);
+        uint32_t compare_value = (uint32_t)((right_speed * period_ticks) / 255);
+        mcpwm_comparator_set_compare_value(right_track_cmpr_a, compare_value);
         mcpwm_comparator_set_compare_value(right_track_cmpr_b, 0);
     } else if (right_speed < 0) {
         // 후진
+        uint32_t compare_value = (uint32_t)((-right_speed * period_ticks) / 255);
         mcpwm_comparator_set_compare_value(right_track_cmpr_a, 0);
-        mcpwm_comparator_set_compare_value(right_track_cmpr_b, -right_speed * 100);
+        mcpwm_comparator_set_compare_value(right_track_cmpr_b, compare_value);
     } else {
         // 정지
         mcpwm_comparator_set_compare_value(right_track_cmpr_a, 0);
@@ -220,15 +244,20 @@ void rc_tank_set_turret_speed(int speed) {
     
     rc_tank.turret_speed = speed;
     
+    // MCPWM period_ticks 계산 (10MHz / 5kHz = 2000)
+    const uint32_t period_ticks = MCPWM_TIMER_RESOLUTION / MCPWM_FREQ;
+    
     // 터렛 제어
     if (speed > 0) {
         // 시계방향 회전
-        mcpwm_comparator_set_compare_value(turret_cmpr_a, speed * 100);
+        uint32_t compare_value = (uint32_t)((speed * period_ticks) / 255);
+        mcpwm_comparator_set_compare_value(turret_cmpr_a, compare_value);
         mcpwm_comparator_set_compare_value(turret_cmpr_b, 0);
     } else if (speed < 0) {
         // 반시계방향 회전
+        uint32_t compare_value = (uint32_t)((-speed * period_ticks) / 255);
         mcpwm_comparator_set_compare_value(turret_cmpr_a, 0);
-        mcpwm_comparator_set_compare_value(turret_cmpr_b, -speed * 100);
+        mcpwm_comparator_set_compare_value(turret_cmpr_b, compare_value);
     } else {
         // 정지
         mcpwm_comparator_set_compare_value(turret_cmpr_a, 0);
@@ -249,8 +278,9 @@ void rc_tank_set_mount_angle(int angle) {
     // 0도 = 0.5ms = 2.5% duty cycle
     // 180도 = 2.5ms = 12.5% duty cycle
     float duty_percent = 2.5f + (angle * 10.0f) / 180.0f;
-    uint32_t compare_value = (uint32_t)(duty_percent * 10000); // 0.01% 단위
-    mcpwm_comparator_set_compare_value(servo_cmpr_b, compare_value);
+    uint32_t duty = (uint32_t)((duty_percent / 100.0f) * ((1 << LEDC_DUTY_RES) - 1));
+    ledc_set_duty(LEDC_MODE, LEDC_CHANNEL_MOUNT, duty);
+    ledc_update_duty(LEDC_MODE, LEDC_CHANNEL_MOUNT);
     
     ESP_LOGD(TAG, "Mount angle set: %d, duty: %.1f%%", angle, duty_percent);
 }
@@ -266,8 +296,9 @@ void rc_tank_set_cannon_angle(int angle) {
     // 0도 = 0.5ms = 2.5% duty cycle
     // 90도 = 2.5ms = 12.5% duty cycle
     float duty_percent = 2.5f + (angle * 10.0f) / 90.0f;
-    uint32_t compare_value = (uint32_t)(duty_percent * 10000); // 0.01% 단위
-    mcpwm_comparator_set_compare_value(servo_cmpr_a, compare_value);
+    uint32_t duty = (uint32_t)((duty_percent / 100.0f) * ((1 << LEDC_DUTY_RES) - 1));
+    ledc_set_duty(LEDC_MODE, LEDC_CHANNEL_CANNON, duty);
+    ledc_update_duty(LEDC_MODE, LEDC_CHANNEL_CANNON);
     
     ESP_LOGD(TAG, "Cannon angle set: %d, duty: %.1f%%", angle, duty_percent);
 }

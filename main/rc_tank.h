@@ -24,9 +24,17 @@
 #define DFPLAYER_RX_PIN       32  // DFPlayer RX
 #define DFPLAYER_TX_PIN       33  // DFPlayer TX
 
-// MCPWM 설정
+// MCPWM 설정 (모터 제어용)
 #define MCPWM_FREQ           5000
 #define MCPWM_TIMER_RESOLUTION 10000000  // 10MHz
+
+// LEDC 설정 (서보 모터 제어용)
+#define LEDC_TIMER              LEDC_TIMER_0
+#define LEDC_MODE               LEDC_LOW_SPEED_MODE
+#define LEDC_CHANNEL_MOUNT      LEDC_CHANNEL_0
+#define LEDC_CHANNEL_CANNON     LEDC_CHANNEL_1
+#define LEDC_DUTY_RES           LEDC_TIMER_13_BIT
+#define LEDC_FREQUENCY          50  // 50Hz for servo motors
 
 // 서보 모터 각도 범위
 #define MOUNT_MIN_ANGLE       0
