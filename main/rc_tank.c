@@ -59,7 +59,7 @@ static void setup_gpio(void) {
 }
 
 void rc_tank_init(void) {
-    ESP_LOGI(TAG, "RC Tank 초기화 시작");
+    ESP_LOGI(TAG, "RC Tank initialization started");
     
     // NVS 초기화
     esp_err_t ret = nvs_flash_init();
@@ -166,7 +166,7 @@ void rc_tank_init(void) {
     // 모터 정지
     rc_tank_stop();
     
-    ESP_LOGI(TAG, "RC Tank 초기화 완료");
+    ESP_LOGI(TAG, "RC Tank initialization completed");
 }
 
 void rc_tank_set_track_speed(int left_speed, int right_speed) {
@@ -211,7 +211,7 @@ void rc_tank_set_track_speed(int left_speed, int right_speed) {
         mcpwm_comparator_set_compare_value(right_track_cmpr_b, 0);
     }
     
-    ESP_LOGD(TAG, "트랙 속도 설정: 왼쪽=%d, 오른쪽=%d", left_speed, right_speed);
+    ESP_LOGD(TAG, "Track speed set: left=%d, right=%d", left_speed, right_speed);
 }
 
 void rc_tank_set_turret_speed(int speed) {
@@ -235,7 +235,7 @@ void rc_tank_set_turret_speed(int speed) {
         mcpwm_comparator_set_compare_value(turret_cmpr_b, 0);
     }
     
-    ESP_LOGD(TAG, "터렛 속도 설정: %d", speed);
+    ESP_LOGD(TAG, "Turret speed set: %d", speed);
 }
 
 void rc_tank_set_mount_angle(int angle) {
@@ -252,7 +252,7 @@ void rc_tank_set_mount_angle(int angle) {
     uint32_t compare_value = (uint32_t)(duty_percent * 10000); // 0.01% 단위
     mcpwm_comparator_set_compare_value(servo_cmpr_b, compare_value);
     
-    ESP_LOGD(TAG, "포 마운트 각도 설정: %d, duty: %.1f%%", angle, duty_percent);
+    ESP_LOGD(TAG, "Mount angle set: %d, duty: %.1f%%", angle, duty_percent);
 }
 
 void rc_tank_set_cannon_angle(int angle) {
@@ -269,20 +269,20 @@ void rc_tank_set_cannon_angle(int angle) {
     uint32_t compare_value = (uint32_t)(duty_percent * 10000); // 0.01% 단위
     mcpwm_comparator_set_compare_value(servo_cmpr_a, compare_value);
     
-    ESP_LOGD(TAG, "포신 각도 설정: %d, duty: %.1f%%", angle, duty_percent);
+    ESP_LOGD(TAG, "Cannon angle set: %d, duty: %.1f%%", angle, duty_percent);
 }
 
 void rc_tank_toggle_headlight(void) {
     rc_tank.headlight_on = !rc_tank.headlight_on;
     gpio_set_level(HEADLIGHT_LED_PIN, rc_tank.headlight_on ? 1 : 0);
-    ESP_LOGI(TAG, "헤드라이트 %s", rc_tank.headlight_on ? "ON" : "OFF");
+    ESP_LOGI(TAG, "Headlight %s", rc_tank.headlight_on ? "ON" : "OFF");
 }
 
 void rc_tank_stop(void) {
     rc_tank.state = RC_TANK_STOP;
     rc_tank_set_track_speed(0, 0);
     rc_tank_set_turret_speed(0);
-    ESP_LOGI(TAG, "RC Tank 정지");
+    ESP_LOGI(TAG, "RC Tank stopped");
 }
 
 void rc_tank_control_from_gamepad(float left_y, float right_y, int dpad_x, int dpad_y) {
@@ -321,7 +321,7 @@ void rc_tank_control_from_gamepad(float left_y, float right_y, int dpad_x, int d
         rc_tank_set_mount_angle(new_angle);
     }
     
-    ESP_LOGD(TAG, "게임패드 제어: LY=%.2f, RY=%.2f, DPAD_X=%d, DPAD_Y=%d", 
+        ESP_LOGD(TAG, "Gamepad control: LY=%.2f, RY=%.2f, DPAD_X=%d, DPAD_Y=%d",
              left_y, right_y, dpad_x, dpad_y);
 }
 
@@ -329,15 +329,15 @@ void rc_tank_save_speed_multipliers(void) {
     nvs_handle_t nvs_handle;
     esp_err_t err = nvs_open("rc_tank", NVS_READWRITE, &nvs_handle);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "NVS 열기 실패: %s", esp_err_to_name(err));
+        ESP_LOGE(TAG, "NVS open failed: %s", esp_err_to_name(err));
         return;
     }
     
     err = nvs_set_blob(nvs_handle, "speed_mult", &rc_tank.left_speed_multiplier, sizeof(float) * 2);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "속도 배율 저장 실패: %s", esp_err_to_name(err));
+        ESP_LOGE(TAG, "Speed multiplier save failed: %s", esp_err_to_name(err));
     } else {
-        ESP_LOGI(TAG, "속도 배율 저장 완료: 왼쪽=%.2f, 오른쪽=%.2f", 
+                ESP_LOGI(TAG, "Speed multiplier saved: left=%.2f, right=%.2f",
                  rc_tank.left_speed_multiplier, rc_tank.right_speed_multiplier);
     }
     
@@ -348,7 +348,7 @@ void rc_tank_load_speed_multipliers(void) {
     nvs_handle_t nvs_handle;
     esp_err_t err = nvs_open("rc_tank", NVS_READONLY, &nvs_handle);
     if (err != ESP_OK) {
-        ESP_LOGW(TAG, "NVS 열기 실패, 기본값 사용: %s", esp_err_to_name(err));
+        ESP_LOGW(TAG, "NVS open failed, using default values: %s", esp_err_to_name(err));
         rc_tank.left_speed_multiplier = 1.0f;
         rc_tank.right_speed_multiplier = 1.0f;
         return;
@@ -357,11 +357,11 @@ void rc_tank_load_speed_multipliers(void) {
     size_t required_size = sizeof(float) * 2;
     err = nvs_get_blob(nvs_handle, "speed_mult", &rc_tank.left_speed_multiplier, &required_size);
     if (err != ESP_OK) {
-        ESP_LOGW(TAG, "속도 배율 로드 실패, 기본값 사용: %s", esp_err_to_name(err));
+        ESP_LOGW(TAG, "Speed multiplier load failed, using default values: %s", esp_err_to_name(err));
         rc_tank.left_speed_multiplier = 1.0f;
         rc_tank.right_speed_multiplier = 1.0f;
     } else {
-        ESP_LOGI(TAG, "속도 배율 로드 완료: 왼쪽=%.2f, 오른쪽=%.2f", 
+                ESP_LOGI(TAG, "Speed multiplier loaded: left=%.2f, right=%.2f",
                  rc_tank.left_speed_multiplier, rc_tank.right_speed_multiplier);
     }
     

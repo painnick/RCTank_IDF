@@ -52,16 +52,16 @@ static esp_err_t dfplayer_send_command(uint8_t command, uint16_t parameter) {
     
     int written = uart_write_bytes(UART_NUM, &packet, sizeof(packet));
     if (written != sizeof(packet)) {
-        ESP_LOGE(TAG, "DFPlayer 명령 전송 실패");
+        ESP_LOGE(TAG, "DFPlayer command transmission failed");
         return ESP_FAIL;
     }
     
-    ESP_LOGD(TAG, "DFPlayer 명령 전송: CMD=0x%02X, PARAM=0x%04X", command, parameter);
+    ESP_LOGD(TAG, "DFPlayer command sent: CMD=0x%02X, PARAM=0x%04X", command, parameter);
     return ESP_OK;
 }
 
 void dfplayer_init(void) {
-    ESP_LOGI(TAG, "DFPlayer 초기화 시작");
+    ESP_LOGI(TAG, "DFPlayer initialization started");
     
     // UART 설정
     uart_config_t uart_config = {
@@ -75,19 +75,19 @@ void dfplayer_init(void) {
     
     esp_err_t ret = uart_driver_install(UART_NUM, BUF_SIZE * 2, 0, 0, NULL, 0);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "UART 드라이버 설치 실패: %s", esp_err_to_name(ret));
+        ESP_LOGE(TAG, "UART driver installation failed: %s", esp_err_to_name(ret));
         return;
     }
     
     ret = uart_param_config(UART_NUM, &uart_config);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "UART 파라미터 설정 실패: %s", esp_err_to_name(ret));
+        ESP_LOGE(TAG, "UART parameter configuration failed: %s", esp_err_to_name(ret));
         return;
     }
     
     ret = uart_set_pin(UART_NUM, DFPLAYER_TX_PIN, DFPLAYER_RX_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "UART 핀 설정 실패: %s", esp_err_to_name(ret));
+        ESP_LOGE(TAG, "UART pin configuration failed: %s", esp_err_to_name(ret));
         return;
     }
     
@@ -109,32 +109,32 @@ void dfplayer_init(void) {
     // 대기 효과음 재생 시작
     dfplayer_play_file(SOUND_IDLE);
     
-    ESP_LOGI(TAG, "DFPlayer 초기화 완료");
+    ESP_LOGI(TAG, "DFPlayer initialization completed");
 }
 
 void dfplayer_play_file(uint8_t file_number) {
-    ESP_LOGI(TAG, "DFPlayer 파일 재생: %d", file_number);
+    ESP_LOGI(TAG, "DFPlayer playing file: %d", file_number);
     dfplayer_send_command(DFPLAYER_CMD_PLAY_FILE, file_number);
 }
 
 void dfplayer_set_volume(uint8_t volume) {
     if (volume > 30) volume = 30;
-    ESP_LOGI(TAG, "DFPlayer 볼륨 설정: %d", volume);
+    ESP_LOGI(TAG, "DFPlayer volume set: %d", volume);
     dfplayer_send_command(DFPLAYER_CMD_SET_VOLUME, volume);
 }
 
 void dfplayer_pause(void) {
-    ESP_LOGI(TAG, "DFPlayer 일시정지");
+    ESP_LOGI(TAG, "DFPlayer paused");
     dfplayer_send_command(DFPLAYER_CMD_PAUSE, 0);
 }
 
 void dfplayer_resume(void) {
-    ESP_LOGI(TAG, "DFPlayer 재생 재개");
+    ESP_LOGI(TAG, "DFPlayer resumed");
     dfplayer_send_command(DFPLAYER_CMD_PLAY, 0);
 }
 
 void dfplayer_stop(void) {
-    ESP_LOGI(TAG, "DFPlayer 정지");
+    ESP_LOGI(TAG, "DFPlayer stopped");
     dfplayer_send_command(DFPLAYER_CMD_PAUSE, 0);
 }
 
