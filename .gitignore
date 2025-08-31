@@ -15,7 +15,6 @@ sdkconfig
 dist/
 build/
 cmake-build-*/
-build/
 
 # Xcode
 *.mode*v*
@@ -32,6 +31,9 @@ DerivedData/
 
 # VSCode
 .vscode/
+
+# platform.io
+/.pio/
 
 # Android Studio
 .gradle/
@@ -55,4 +57,3 @@ ui_*.h
 
 # Vagrant stuff
 .vagrant
-
