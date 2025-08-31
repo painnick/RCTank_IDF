@@ -1,268 +1,204 @@
-# ESP-IDF + Arduino + Bluepad32 template app
-
-[![discord](https://img.shields.io/discord/775177861665521725.svg)](https://discord.gg/r5aMn6Cw5q)
-
-![logo](https://gitlab.com/ricardoquesada/bluepad32-arduino/-/raw/main/img/bluepad32-arduino-logo.png)
-
-This is a template application to be used
-with [Espressif IoT Development Framework](https://github.com/espressif/esp-idf).
-
-Please check [ESP-IDF docs](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html) for getting
-started instructions.
-
-Requires ESP-IDF **v5.4.2**.
-
-Includes the following ESP-IDF components, with a pre-configured `sdkconfig` file:
-
-* [Arduino Core for ESP32](https://github.com/espressif/arduino-esp32) component
-* [Bluepad32](https://github.com/ricardoquesada/bluepad32/) component
-* [BTStack](https://github.com/bluekitchen/btstack) component
-
-## How to compile it
-
-Clone the template project:
-
-   ```sh
-   git clone --recursive https://github.com/ricardoquesada/esp-idf-arduino-bluepad32-template.git my_project
-   ```
-
-After cloning the *template* you have the following options:
-
-* A) Using PlatformIO
-* B) Visual Studio Code + ESP-IDF plugin
-* C) CLion (personal favorite)
-* D) ESP-IDF from command line
-
-*Note: Arduino IDE is not supported in this "template app" project*
-
-### A) Using PlatformIO + ESP-IDF
-
-![open_project][pio_open_project]
-
-1. Open Visual Studio Code, select the PlatformIO plugin
-2. Click on "Pick a folder", and select the recently cloned "my_project" folder
-
-That's it. The PlatformIO will download the ESP-IDF toolchain and its dependencies.
-
-It might take a few minutes to download all dependencies. Be patient.
-
-*Note: You might need to remove previously installed PlatformIO packages. Just do `rm -rf ~/.platformio`
-and reinstall the PlatformIO plugin.*
-
-![build_project][pio_build_project]
-
-After all dependencies were installed:
-
-1. Click on one of the pre-created boards, like *esp32-s3-devkit-1*. Or edit `platformio.ini` file, and add your own.
-2. Click on *build*
-
-![monitor_project][pio_monitor_project]
-
-Finally, click on "Upload and Monitor":
-
-* It will upload your sketch
-* And will enter into "monitor" mode: You can see and use the console. Try typing `help` on the console.
-
-Further reading: [PlatformIO Espressif IoT Development Framework][pio_espidf]
-
-[pio_open_project]: https://lh3.googleusercontent.com/pw/ABLVV85JEEjjsQqcCcfZUclYF1ItYSHPmpzP0SC4VH9Ypqp05r2ixlv9C2xv4p-r6fW_CyCNa8ylmeSjyUg_K2Sp-XUXQRTYO_6HvhQXcXxTZXgQvvNBqA8JaerwCB1UODkXgYa_6ONT19KTO52OMs0eOOeeMg=-no-gm?authuser=0
-
-[pio_build_project]: https://lh3.googleusercontent.com/pw/ABLVV86DiV9H-wDEv1X8ra_fJAw0OG2sBoM5d0gJElPfptzVpb6n8gzOEHDfKXLMKrivzNSt03XpMWSw-hSVJUi0aavQiwgL0t1rmQeKqfYpXkGCKKwcerrNx8BBkFR3VoKQEPMF-e-xVvKVque2pi1sTa8tWA=-no-gm?authuser=0
-
-[pio_monitor_project]: https://lh3.googleusercontent.com/pw/ABLVV845uPqRtJkUrv4JlODuTr7Shnw0HR7BdojRbxv3xWyiUO-V_Kv42YAKAV-XyoNRPY5vsyj0yRDsRxH0mxz8Q1NYzvhCKw5Ni9MH6UYR8IiaT8XS9hysR81APn8X2tnVgnmJ6ZkSPCgUURnE2MVYIWYrNQ=-no-gm?authuser=0
-
-[pio_espidf]: https://docs.platformio.org/en/latest/frameworks/espidf.html
-
-### B) Visual Studio Code + ESP-IDF plugin
-
-![vscode_ide](https://lh3.googleusercontent.com/pw/AM-JKLUxjqUhU2tM-bKw3togS3gTkBdtmi40kqW2c2KieAybnD770I3pdaLnFU7a-sM7dUUGmcWpigvElc1fGo1J-5bJlVdbg8HOJZKbUXo6A_IqIvUGEK6GtwxqNy5EFJmijrBnB_aQhd_fi3GQnXZ1V7WYvw=-no)
-
-Open [Visual Studio Code][vscode] and install the [ESP-IDF plugin][esp-idf-plugin].
-
-Features:
-
-* All the regular Visual Studio Code regular features
-* ...plus configure, build, flash and monitor your project
-* ...and much more
-
-[vscode]: https://code.visualstudio.com/
-
-[esp-idf-plugin]: https://github.com/espressif/vscode-esp-idf-extension
-
-### C) CLion
-
-![clion_ide](https://lh3.googleusercontent.com/pw/AP1GczO-t-uncCZJF8ygBXWmO8Dvrx3C4f7tHhisfF39GKXUaryiRA5rYJWx3SQR8fR1orYGmHdOSVnZLVdoYtoc6IYnurdbtXo6_4ZIVgwnzyWJrNkyQFHu6kma6c__YePCddO9BjMFWHyVrBBk7rmNki5EDQ=-no-gm?authuser=0)
-
-[CLion][clion] is a great IDE, and my personal favorite. It works very well with ESP-IDF based projects.
-
-To integrate your project with CLion, follow the steps in the [CLion official documentation][clion_esp_idf].
-
-[clion]: https://www.jetbrains.com/clion/
-
-[clion_esp_idf]: https://www.jetbrains.com/help/clion/esp-idf.html
-
-### D) ESP-IDF from command line
-
-#### For Windows
-
-1. Install [ESP-IDF v5.4][esp-idf-windows-installer]. For further info,
-   read: [ESP-IDF Getting Started for Windows][esp-idf-windows-setup]
-
-    * Either the Online or Offline version should work
-    * When asked which components to install, don't change anything. Default options are Ok.
-    * When asked whether ESP can modify the system, answer "Yes"
-
-2. Launch the "ESP-IDF v5.4 CMD" (type that in the Windows search box)
-
-3. Compile it
-
-    ```sh
-    # Compile it
-    cd my_project
-    idf.py build
-
-    # Flash + open debug terminal
-    idf.py flash monitor
-    ```
-
-[esp-idf-windows-setup]: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/windows-setup.html
-
-[esp-idf-windows-installer]: https://dl.espressif.com/dl/esp-idf/?idf=5.4
-
-#### For Linux / macOS
-
-1. Requirements and permissions
-
-   Install ESP-IDF dependencies (taken from [here][toolchain-deps]):
-
-    ```sh
-    # For Ubuntu / Debian
-    sudo apt-get install git wget flex bison gperf python3 python3-pip python3-setuptools cmake ninja-build ccache libffi-dev libssl-dev dfu-util libusb-1.0-0
-    ```
-
-   And in case you don't have permissions to open `/dev/ttyUSB0`, do:
-   (taken from [here][ttyusb0])
-
-    ```sh
-    # You MUST logout/login (or in some cases reboot Linux) after running this command
-    sudo usermod -a -G dialout $USER
-    ```
-
-2. Install and setup ESP-IDF
-
-    ```sh
-    # Needs to be done just once
-    # Clone the ESP-IDF git repo
-    mkdir ~/esp && cd ~/esp
-    git clone -b release/v5.4 --recursive https://github.com/espressif/esp-idf.git
-
-    # Then install the toolchain
-    cd ~/esp/esp-idf
-    ./install.sh
-    ```
-
-3. Compile the template
-
-   Clone the template:
-
-    ```sh
-    # Do it everytime you want to start a new project
-    # Clone the template somewhere
-    mkdir ~/src && cd ~/src
-    git clone --recursive https://github.com/ricardoquesada/esp-idf-arduino-bluepad32-template.git my_project
-    ```
-
-   Export the ESP-IDF environment variables in your shell:
-
-    ```sh
-    # Do it everytime you open a new shell
-    # Optional: add it in your ~/.bashrc or ~/.profile
-    source ~/esp/esp-idf/export.sh
-    ```
-
-   And finally compile and install your project.
-
-    ```sh
-    # Compile it
-    cd ~/src/my_project
-    idf.py build
-
-    # Flash + open debug terminal
-    idf.py flash monitor
-    ```
-
-[toolchain-deps]: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/linux-setup.html
-
-[ttyusb0]: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/establish-serial-connection.html#linux-dialout-group
-
-## Using 3rd party Arduino libraries
-
-To include 3rd party Arduino libraries in your project, you have to:
-
-* Add them to the `components` folder.
-* Add `CMakeLists.txt` file inside the component's folder
-
-Let's use a real case as an example:
-
-### Example: Adding ESP32Servo
-
-Suppose you want to use [ESP32Servo] project. The first thing to notice is that the source files are placed
-in the `src` folder. We have to create a `CMakeLists.txt` file that tells ESP-IDF to look for the sources
-in the `src` folder.
-
-Example:
-
-```sh
-# 1) We clone ESP32Servo into components folder
-cd components
-git clone https://github.com/madhephaestus/ESP32Servo.git
-cd ESP32Servo
+# RC Tank 프로젝트
+
+Bluepad32를 이용한 게임패드 조작 RC 탱크입니다.
+
+## 기능
+
+* **게임패드 연결**: Bluepad32를 통한 블루투스 게임패드 연결
+* **트랙 제어**: 좌측 스틱 Y축으로 좌측 트랙, 우측 스틱 Y축으로 우측 트랙 독립 제어
+* **터렛 제어**: D-PAD 좌우로 터렛 회전
+* **포 마운트 제어**: D-PAD 상하로 포 마운트 각도 조절
+* **포신 발사**: B 버튼으로 포신 당기기 (LED 깜빡임 + 효과음 2)
+* **기관총 발사**: A 버튼으로 기관총 발사 (LED 점멸 + 효과음 3, 3초간)
+* **헤드라이트**: R1 버튼으로 헤드라이트 ON/OFF
+* **속도 조절**: X/Y 버튼 + D-PAD로 좌우 트랙 속도 조절 (NVS 저장)
+* **효과음**: DFPlayer를 통한 SD카드 효과음 재생
+* **모터 제어**: MCPWM을 사용한 정밀한 모터 속도 제어
+
+## 하드웨어 연결
+
+### ESP32 핀 연결
+
+| ESP32 핀 | 연결 대상       | 설명                     |
+| ------- | ----------- | ---------------------- |
+| GPIO 4  | 포신 LED      | 포신/기관총 발사 시 깜빡임        |
+| GPIO 16 | 헤드라이트 LED   | 헤드라이트 제어               |
+| GPIO 13 | 우측 트랙 IN2   | DRV8833 우측 트랙 제어       |
+| GPIO 18 | 포신 서보 모터    | 포신 당기기 제어 (B 버튼)       |
+| GPIO 19 | 포 마운트 서보 모터 | 포 마운트 각도 제어 (D-PAD 상하) |
+| GPIO 21 | 터렛 모터 IN2   | DRV8833 터렛 제어          |
+| GPIO 22 | 터렛 모터 IN1   | DRV8833 터렛 제어          |
+| GPIO 25 | 좌측 트랙 IN1   | DRV8833 좌측 트랙 제어       |
+| GPIO 26 | 좌측 트랙 IN2   | DRV8833 좌측 트랙 제어       |
+| GPIO 27 | 우측 트랙 IN1   | DRV8833 우측 트랙 제어       |
+| GPIO 32 | DFPlayer RX | DFPlayer 통신            |
+| GPIO 33 | DFPlayer TX | DFPlayer 통신            |
+
+### DRV8833 모터 드라이버 연결
+
+#### 좌측 트랙 (DRV8833 #1)
+
+* AIN1 → GPIO 25
+* AIN2 → GPIO 26
+* AOUT1 → 좌측 트랙 모터 1
+* AOUT2 → 좌측 트랙 모터 2
+* VM → 12V 전원
+* GND → 공통 접지
+* VCC → 3.3V (논리 전원)
+
+#### 우측 트랙 (DRV8833 #1)
+
+* BIN1 → GPIO 27
+* BIN2 → GPIO 13
+* BOUT1 → 우측 트랙 모터 1
+* BOUT2 → 우측 트랙 모터 2
+
+#### 터렛 (DRV8833 #2)
+
+* AIN1 → GPIO 22
+* AIN2 → GPIO 21
+* AOUT1 → 터렛 모터 +
+* AOUT2 → 터렛 모터 -
+* VM → 12V 전원
+* GND → 공통 접지
+* VCC → 3.3V (논리 전원)
+
+### 서보 모터 연결
+
+#### 포 마운트 서보 모터 (각도 조절)
+
+* **신호선**: GPIO 19
+* **전원**: 5V
+* **접지**: 공통 접지
+* **기능**: D-PAD 상하로 포 마운트 각도 조절
+
+#### 포신 서보 모터 (당기기)
+
+* **신호선**: GPIO 18
+* **전원**: 5V
+* **접지**: 공통 접지
+* **기능**: B 버튼으로 포신 당기기
+
+### DFPlayer Mini 연결
+
+* RX → GPIO 33
+* TX → GPIO 32
+* VCC → 5V
+* GND → 공통 접지
+* SPK_1, SPK_2 → 스피커
+
+## SD카드 설정
+
+SD카드에 다음 파일들을 저장하세요:
+
+```
+sdcard/
+├── 0001.mp3  (효과음 1 - 대기 시 반복 재생)
+├── 0002.mp3  (효과음 2 - 포신 발사 시 재생)
+├── 0003.mp3  (효과음 3 - 기관총 발사 시 재생)
+└── 0004.mp3  (효과음 4 - 게임 패드 연결 시 재생)
 ```
 
-And now create these files inside `components/ESP32Servo` folder:
+## 게임패드 조작법
 
-```sh
-# 2) Create CMakeLists.txt file
-# Copy & paste the following lines to the terminal:
-cat << EOF > CMakeLists.txt
-idf_component_register(SRC_DIRS "src"
-                    INCLUDE_DIRS "src"
-                    REQUIRES "arduino")
-EOF
+### 기본 조작
+
+* **좌측 스틱 Y축**: 좌측 트랙 전후진 제어
+* **우측 스틱 Y축**: 우측 트랙 전후진 제어
+* **D-PAD 좌우**: 터렛 좌우 회전
+* **D-PAD 상하**: 포 마운트 상하 각도 조절
+
+### 버튼 조작
+
+* **B 버튼**: 포신 당기기 (LED 깜빡임 + 효과음 2 재생, 500ms)
+* **A 버튼**: 기관총 발사 (LED 점멸 + 효과음 3 재생, 3초간)
+* **R1 버튼**: 헤드라이트 ON/OFF 토글
+
+### 속도 조절
+
+* **X 버튼 + D-PAD 위**: 좌측 트랙 속도 배율 증가 (+0.02)
+* **X 버튼 + D-PAD 아래**: 좌측 트랙 속도 배율 감소 (-0.02)
+* **Y 버튼 + D-PAD 위**: 우측 트랙 속도 배율 증가 (+0.02)
+* **Y 버튼 + D-PAD 아래**: 우측 트랙 속도 배율 감소 (-0.02)
+
+**배율 범위**: 0.1~2.0 (0.1 = 10% 속도, 1.0 = 100% 속도, 2.0 = 200% 속도)
+
+_속도 배율 설정은 NVS에 자동 저장되어 다음 시작 시에도 유지됩니다._
+
+### LED 동작
+
+* **포신 발사 시**: 포신 LED 100ms 간격으로 깜빡임 (500ms 동안)
+* **기관총 발사 시**: 포신 LED 500ms 간격으로 점멸 (3초간)
+* **헤드라이트**: R1 버튼으로 ON/OFF 토글
+
+## 컴파일 및 업로드
+
+### PlatformIO 사용
+
+1. PlatformIO IDE에서 프로젝트를 열기
+2. 필요한 라이브러리들이 자동으로 설치됩니다
+3. ESP32 보드를 연결하고 업로드
+4. 시리얼 모니터로 초기화 과정 확인
+
+### ESP-IDF 사용
+
+```bash
+# 프로젝트 빌드
+idf.py build
+
+# ESP32에 업로드
+idf.py flash
+
+# 시리얼 모니터 실행
+idf.py monitor
 ```
 
-Finally, update the dependencies in the `main/CMakeLists.txt`. E.g:
+## 초기화 과정
 
-```sh
-cd main
-edit CMakeLists.txt
-```
+1. ESP32 부팅
+2. NVS에서 속도 설정 로드
+3. DFPlayer 초기화 및 효과음 1 재생 시작
+4. Bluepad32 초기화
+5. 게임패드 연결 대기
 
-...and append `ESP32Servo` to `REQUIRES`. The `main/CMakeLists.txt` should look like this:
+## 게임패드 연결
 
-```cmake
-idf_component_register(SRCS "${srcs}"
-        INCLUDE_DIRS "."
-        REQUIRES "${requires}" "ESP32Servo")
-```
+1. ESP32 부팅 후 블루투스 페어링 모드 진입
+2. 게임패드에서 블루투스 설정으로 ESP32 연결
+3. 연결 성공 시 효과음 1 재생 중단
+4. 게임패드 조작 가능
 
-And that's it. Now you can include `ESP32Servo` from your code. E.g:
+## 문제 해결
 
-```cpp
-// Add this include in your arduino_main.cpp file
-#include <ESP32Servo.h>
-```
+### 게임패드가 연결되지 않는 경우
 
-[esp32servo]: https://github.com/madhephaestus/ESP32Servo.git
+* ESP32 재부팅 후 다시 시도
+* 게임패드 페어링 정보 초기화 후 재연결
 
-## Further info
+### 모터가 작동하지 않는 경우
 
-* [Bluepad32 for Arduino](https://bluepad32.readthedocs.io/en/latest/plat_arduino/)
-* [Arduino as ESP-IDF component](https://docs.espressif.com/projects/arduino-esp32/en/latest/esp-idf_component.html)
-* [ESP-IDF VSCode plugin](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/vscode-setup.html)
+* 전원 공급 확인 (12V)
+* DRV8833 연결 확인
+* MCPWM 설정 확인
 
-## Support
+### 효과음이 나오지 않는 경우
 
-* [Discord][discord]: any question? Ask them on our Discord server.
+* SD카드 파일명 확인 (0001.mp3, 0002.mp3 등)
+* DFPlayer 연결 확인 (GPIO 32, 33)
+* 볼륨 설정 확인 (코드에서 20으로 설정)
 
-[discord]: https://discord.gg/r5aMn6Cw5q
+### 서보 모터가 작동하지 않는 경우
+
+* 서보 모터 전원 공급 확인 (5V)
+* 서보 신호선 연결 확인 (GPIO 18, GPIO 19)
+* MCPWM 설정 확인
+
+## 라이센스
+
+이 프로젝트는 MIT 라이센스 하에 배포됩니다.
+
+## 참고 자료
+
+* [Bluepad32](https://github.com/ricardoquesada/bluepad32/) - 게임패드 지원 라이브러리
+* [ESP-IDF](https://github.com/espressif/esp-idf) - Espressif IoT Development Framework
+* [DFPlayer Mini](https://www.dfrobot.com/product-1121.html) - MP3 재생 모듈

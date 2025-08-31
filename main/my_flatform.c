@@ -4,6 +4,12 @@
 #include <string.h>
 
 #include <uni.h>
+#include "rc_tank.h"
+#include "dfplayer.h"
+#include "driver/gpio.h"
+#include "esp_timer.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 // Custom "instance"
 typedef struct my_platform_instance_s {
@@ -22,6 +28,12 @@ static void my_platform_init(int argc, const char** argv) {
     ARG_UNUSED(argv);
 
     logi("custom: init()\n");
+    
+    // RC Tank 초기화
+    rc_tank_init();
+    
+    // DFPlayer 초기화
+    dfplayer_init();
 
 #if 0
     uni_gamepad_mappings_t mappings = GAMEPAD_DEFAULT_MAPPINGS;
@@ -81,12 +93,24 @@ static void my_platform_on_device_connected(uni_hid_device_t* d) {
 
 static void my_platform_on_device_disconnected(uni_hid_device_t* d) {
     logi("custom: device disconnected: %p\n", d);
+    
+    // 게임패드 연결 해제 시 대기 효과음 재생
+    rc_tank.is_connected = false;
+    rc_tank_stop();  // 모터 정지
+    dfplayer_play_file(SOUND_IDLE);
 }
 
 static uni_error_t my_platform_on_device_ready(uni_hid_device_t* d) {
     logi("custom: device ready: %p\n", d);
     my_platform_instance_t* ins = get_my_platform_instance(d);
     ins->gamepad_seat = GAMEPAD_SEAT_A;
+
+    // 게임패드 연결 시 효과음 재생
+    dfplayer_pause();  // 대기 효과음 중단
+    dfplayer_play_file(SOUND_CONNECT);
+    
+    // RC Tank 연결 상태 설정
+    rc_tank.is_connected = true;
 
     trigger_event_on_gamepad(d);
     return UNI_ERROR_SUCCESS;
@@ -96,6 +120,10 @@ static void my_platform_on_controller_data(uni_hid_device_t* d, uni_controller_t
     static uint8_t leds = 0;
     static uint8_t enabled = true;
     static uni_controller_t prev = {0};
+    static bool cannon_firing = false;
+    static bool machine_gun_firing = false;
+    static uint32_t cannon_start_time = 0;
+    static uint32_t machine_gun_start_time = 0;
     uni_gamepad_t* gp;
 
     // Optimization to avoid processing the previous data so that the console
@@ -104,32 +132,115 @@ static void my_platform_on_controller_data(uni_hid_device_t* d, uni_controller_t
         return;
     }
     prev = *ctl;
-    // Print device Id before dumping gamepad.
-    // This could be very CPU intensive and might crash the ESP32.
-    // Remove these 2 lines in production code.
-    //    logi("(%p), id=%d, \n", d, uni_hid_device_get_idx_for_instance(d));
-    //    uni_controller_dump(ctl);
 
     switch (ctl->klass) {
         case UNI_CONTROLLER_CLASS_GAMEPAD:
             gp = &ctl->gamepad;
 
-            // Debugging
-            // Axis ry: control rumble
-            if ((gp->buttons & BUTTON_A) && d->report_parser.play_dual_rumble != NULL) {
-                d->report_parser.play_dual_rumble(d, 0 /* delayed start ms */, 250 /* duration ms */,
-                                                  255 /* weak magnitude */, 0 /* strong magnitude */);
-            }
-            // Buttons: Control LEDs On/Off
-            if ((gp->buttons & BUTTON_B) && d->report_parser.set_player_leds != NULL) {
-                d->report_parser.set_player_leds(d, leds++ & 0x0f);
-            }
-            // Axis: control RGB color
-            if ((gp->buttons & BUTTON_X) && d->report_parser.set_lightbar_color != NULL) {
-                uint8_t r = (gp->axis_x * 256) / 512;
-                uint8_t g = (gp->axis_y * 256) / 512;
-                uint8_t b = (gp->axis_rx * 256) / 512;
-                d->report_parser.set_lightbar_color(d, r, g, b);
+            // RC Tank 제어
+            if (rc_tank.is_connected) {
+                // 트랙 제어 (좌측 스틱 Y축, 우측 스틱 Y축)
+                float left_y = (float)gp->axis_y / 512.0f;   // -1.0 ~ 1.0
+                float right_y = (float)gp->axis_ry / 512.0f; // -1.0 ~ 1.0
+                
+                // D-PAD 제어
+                int dpad_x = 0, dpad_y = 0;
+                if (gp->dpad & DPAD_LEFT) dpad_x = -1;
+                if (gp->dpad & DPAD_RIGHT) dpad_x = 1;
+                if (gp->dpad & DPAD_UP) dpad_y = -1;
+                if (gp->dpad & DPAD_DOWN) dpad_y = 1;
+                
+                // RC Tank 제어
+                rc_tank_control_from_gamepad(left_y, right_y, dpad_x, dpad_y);
+                
+                // 포신 발사 (B 버튼) - A/B 버튼이 뒤바뀜
+                if ((gp->buttons & BUTTON_B) && !cannon_firing) {
+                    cannon_firing = true;
+                    cannon_start_time = esp_timer_get_time() / 1000; // ms
+                    
+                    // 포신 LED 깜빡임
+                    for (int i = 0; i < 5; i++) {
+                        gpio_set_level(CANNON_LED_PIN, 1);
+                        vTaskDelay(pdMS_TO_TICKS(50));
+                        gpio_set_level(CANNON_LED_PIN, 0);
+                        vTaskDelay(pdMS_TO_TICKS(50));
+                    }
+                    
+                    // 포신 효과음 재생
+                    dfplayer_play_file(SOUND_CANNON_FIRE);
+                    
+                    // 포신 서보 모터 제어 (당기기)
+                    rc_tank_set_cannon_angle(45);
+                    vTaskDelay(pdMS_TO_TICKS(500));
+                    rc_tank_set_cannon_angle(0);
+                }
+                
+                // 기관총 발사 (A 버튼) - A/B 버튼이 뒤바뀜
+                if ((gp->buttons & BUTTON_A) && !machine_gun_firing) {
+                    machine_gun_firing = true;
+                    machine_gun_start_time = esp_timer_get_time() / 1000; // ms
+                    
+                    // 기관총 효과음 재생
+                    dfplayer_play_file(SOUND_MACHINE_GUN);
+                }
+                
+                // 헤드라이트 토글 (R1 버튼)
+                if (gp->buttons & BUTTON_SHOULDER_R) {
+                    rc_tank_toggle_headlight();
+                    vTaskDelay(pdMS_TO_TICKS(200)); // 디바운싱
+                }
+                
+                // 속도 조절 (X/Y 버튼 + D-PAD)
+                if (gp->buttons & BUTTON_X) {
+                    if (dpad_y > 0) {
+                        rc_tank.left_speed_multiplier += 0.02f;
+                        if (rc_tank.left_speed_multiplier > 2.0f) rc_tank.left_speed_multiplier = 2.0f;
+                        rc_tank_save_speed_multipliers();
+                    } else if (dpad_y < 0) {
+                        rc_tank.left_speed_multiplier -= 0.02f;
+                        if (rc_tank.left_speed_multiplier < 0.1f) rc_tank.left_speed_multiplier = 0.1f;
+                        rc_tank_save_speed_multipliers();
+                    }
+                }
+                
+                if (gp->buttons & BUTTON_Y) {
+                    if (dpad_y > 0) {
+                        rc_tank.right_speed_multiplier += 0.02f;
+                        if (rc_tank.right_speed_multiplier > 2.0f) rc_tank.right_speed_multiplier = 2.0f;
+                        rc_tank_save_speed_multipliers();
+                    } else if (dpad_y < 0) {
+                        rc_tank.right_speed_multiplier -= 0.02f;
+                        if (rc_tank.right_speed_multiplier < 0.1f) rc_tank.right_speed_multiplier = 0.1f;
+                        rc_tank_save_speed_multipliers();
+                    }
+                }
+                
+                // 기관총 발사 시간 체크 (3초)
+                if (machine_gun_firing) {
+                    uint32_t current_time = esp_timer_get_time() / 1000;
+                    if (current_time - machine_gun_start_time >= 3000) {
+                        machine_gun_firing = false;
+                        // 포신 LED 점멸 중단
+                        gpio_set_level(CANNON_LED_PIN, 0);
+                    } else {
+                        // 포신 LED 점멸 (500ms 간격)
+                        static uint32_t last_blink = 0;
+                        if (current_time - last_blink >= 500) {
+                            static bool led_state = false;
+                            led_state = !led_state;
+                            gpio_set_level(CANNON_LED_PIN, led_state ? 1 : 0);
+                            last_blink = current_time;
+                        }
+                    }
+                }
+                
+                // 포신 발사 시간 체크 (500ms)
+                if (cannon_firing) {
+                    uint32_t current_time = esp_timer_get_time() / 1000;
+                    if (current_time - cannon_start_time >= 500) {
+                        cannon_firing = false;
+                    }
+                }
             }
 
             // Toggle Bluetooth connections
